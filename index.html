@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <!-- Thêm vào trong <head> -->
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@700&display=swap" rel="stylesheet" />
+
+  <link href="https://fonts.googleapis.com/css2?family=Oswald&display=swap" rel="stylesheet" />
+  <meta charset="UTF-8" />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lịch Dương - Apple Style</title>
+  <style>
+    :root {
+      --bg-light: #f2f2f7;
+      --bg-dark: #121212;
+      --card-light: #fff;
+      --card-dark: #1e1e1e;
+      --text-light: #000;
+      --text-dark: #fff;
+      --text-muted-light: #888;
+      --text-muted-dark: #bbb;
+      --highlight: #007aff;
+      --radius: 16px;
+    }
+
+    body {
+      font-family: 'Oswald', sans-serif;
+      background: var(--bg-light);
+      color: var(--text-light);
+      margin: 0;
+      padding: 60px;
+      display: flex;
+      justify-content: center;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    body.dark-mode {
+      background: var(--bg-dark);
+      color: var(--text-dark);
+    }
+
+    .calendar-container {
+      background: var(--card-light);
+      padding: 20px;
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      transition: background 0.3s;
+    }
+
+    body.dark-mode .calendar-container {
+      background: var(--card-dark);
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+/* Thay đổi .clock như sau */
+.clock {
+  font-family: 'Roboto Mono', monospace;
+  font-size: clamp(1.2rem, 8vw, 5rem);
+  color: var(--text-light);
+  margin-bottom: 8px;
+  transition: color 0.3s;
+  user-select: none;
+  font-weight: 900;
+}
+
+    body.dark-mode .clock {
+      color: var(--text-dark);
+    }
+
+    .today-date {
+      font-size: 1.1rem;
+      color: var(--text-muted-light);
+    }
+
+    body.dark-mode .today-date {
+      color: var(--text-muted-dark);
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      margin: 12px 0;
+    }
+
+    .controls button {
+      background: var(--highlight);
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .month-title {
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .day-header {
+      text-align: center;
+      font-weight: bold;
+      color: var(--text-muted-light);
+    }
+
+    body.dark-mode .day-header {
+      color: var(--text-muted-dark);
+    }
+
+    .day-cell {
+      text-align: center;
+      padding: 5px 0;
+      border-radius: 10px;
+      font-size: 1.5rem;
+    }
+
+    .today {
+      background: var(--highlight);
+      color: white;
+    }
+
+    .sunday {
+      color: red;
+    }
+
+    #themeToggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      border: none;
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    
+    #fullscreenToggle {
+    position: fixed;
+    top: 70px; /* cách nút theme 50px */
+    right: 20px;
+    border: none;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+    cursor: pointer;
+    background: var(--highlight);
+    color: white;
+    user-select: none;
+    transition: background 0.3s;
+  }
+  #fullscreenToggle:hover {
+    background: #005ecb;
+  }
+  body.dark-mode #fullscreenToggle {
+    background: var(--highlight);
+  }
+  body.dark-mode #fullscreenToggle:hover {
+    background: #0047b3;
+  }
+  
+  </style>
+</head>
+<body class="dark-mode">
+    <button id="themeToggle">☀️</button>
+  <button id="fullscreenToggle" title="Toàn màn hình">⛶</button>
+
+  <div class="calendar-container">
+    <div class="header">
+      <div class="clock" id="clock">--:--:--</div>
+      <div class="today-date" id="today-date">--</div>
+    </div>
+
+    <div class="controls">
+      <button onclick="changeMonth(-1)">←</button>
+      <div class="month-title" id="month-title">Tháng --/----</div>
+      <button onclick="changeMonth(1)">→</button>
+    </div>
+    <div class="controls" style="justify-content:center;">
+      <button onclick="goToToday()"><strong>Today</strong></button>
+    </div>
+
+    <div class="calendar-grid" id="calendar-grid"></div>
+  </div>
+
+  <script>
+    const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    let monthOffset = 0;
+    
+    const fullscreenBtn = document.getElementById('fullscreenToggle');
+fullscreenBtn.addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(err => {
+      alert(`Lỗi khi bật fullscreen: ${err.message}`);
+    });
+  } else {
+    document.exitFullscreen();
+  }
+});
+
+    function updateClock() {
+      const now = new Date();
+      const h = String(now.getHours()).padStart(2, '0');
+      const m = String(now.getMinutes()).padStart(2, '0');
+      const s = String(now.getSeconds()).padStart(2, '0');
+      document.getElementById('clock').textContent = `${h}:${m}:${s}`;
+    }
+
+    function updateTodayText() {
+      const now = new Date();
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      const formatted = now.toLocaleDateString('vi-VN', options);
+      document.getElementById('today-date').textContent = formatted.charAt(0).toUpperCase() + formatted.slice(1);
+    }
+
+    function renderCalendar(offset = 0) {
+      const now = new Date();
+      now.setMonth(now.getMonth() + offset);
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const grid = document.getElementById("calendar-grid");
+      const title = document.getElementById("month-title");
+      grid.innerHTML = '';
+      title.textContent = `${month}/${year}`;
+
+      weekdays.forEach(day => {
+        const div = document.createElement('div');
+        div.className = 'day-header';
+        div.textContent = day;
+        grid.appendChild(div);
+      });
+
+      const startOffset = (firstDay === 0 ? 6 : firstDay - 1);
+      for (let i = 0; i < startOffset; i++) {
+        grid.appendChild(document.createElement('div'));
+      }
+
+      const today = new Date();
+      const isCurrentMonth = today.getMonth() === month && today.getFullYear() === year;
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const date = new Date(year, month, d);
+        const div = document.createElement('div');
+        div.className = 'day-cell';
+        div.textContent = String(d).padStart(2, '0');
+        if (date.getDay() === 0) div.classList.add('sunday');
+        if (isCurrentMonth && d === today.getDate()) div.classList.add('today');
+        grid.appendChild(div);
+      }
+    }
+
+    function changeMonth(diff) {
+      monthOffset += diff;
+      renderCalendar(monthOffset);
+    }
+
+    function goToToday() {
+      monthOffset = 0;
+      renderCalendar(0);
+    }
+
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const body = document.body;
+      body.classList.toggle('dark-mode');
+      const icon = body.classList.contains('dark-mode') ? '☀️':'🌙' ;
+      document.getElementById('themeToggle').textContent = icon;
+    });
+
+    setInterval(updateClock, 1000);
+    updateClock();
+    updateTodayText();
+    renderCalendar();
+  </script>
+</body>
+</html>
