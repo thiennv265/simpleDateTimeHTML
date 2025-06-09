@@ -1,20 +1,11 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <!-- Thêm vào trong <head> -->
-<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@700&display=swap" rel="stylesheet" />
-<!-- IBM Plex Mono -->
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@700;900&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/gh/vanng822/lunar-calendar/lunar.min.js"></script>
-
-<!-- Space Mono -->
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@700&display=swap" rel="stylesheet">
-
-  <link href="https://fonts.googleapis.com/css2?family=Oswald&display=swap" rel="stylesheet" />
   <meta charset="UTF-8" />
-  <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Lịch Dương - Apple Style</title>
+  <title>Lịch Dương - Apple Style với Hiệu ứng Mặt Trăng & Sao</title>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@700&display=swap" rel="stylesheet" />
   <style>
     :root {
       --bg-light: #f2f2f7;
@@ -37,28 +28,26 @@
       padding: 60px;
       display: flex;
       justify-content: center;
+      align-items: center;
+      min-height: 100vh;
       transition: background 0.3s, color 0.3s;
+      overflow: auto;
     }
 
     body.dark-mode {
       background: var(--bg-dark);
       color: var(--text-dark);
     }
-    
-    .tooltip {
-  position: absolute;
-  background: #333;
-  color: white;
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  white-space: nowrap;
-  z-index: 999;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
 
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 0; /* Canvas at base layer but receives events */
+      display: block;
+      touch-action: none; /* Prevent touch scrolling issues */
+      pointer-events: auto; /* Ensure canvas captures events */
+    }
 
     .calendar-container {
       background: var(--card-light);
@@ -68,6 +57,9 @@
       max-width: 420px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
       transition: background 0.3s;
+      position: relative;
+      z-index: 1; /* Calendar above canvas */
+      pointer-events: auto; /* Calendar captures its own events */
     }
 
     body.dark-mode .calendar-container {
@@ -79,16 +71,15 @@
       margin-bottom: 16px;
     }
 
-/* Thay đổi .clock như sau */
-.clock {
-  font-family: 'Space Mono', monospace;
-  font-size: clamp(2.5rem, 8vw, 5rem);
-  color: var(--text-light);
-  margin-bottom: 8px;
-  transition: color 0.3s;
-  user-select: none;
-  font-weight: 900;
-}
+    .clock {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(2.5rem, 8vw, 5rem);
+      color: var(--text-light);
+      margin-bottom: 8px;
+      transition: color 0.3s;
+      user-select: none;
+      font-weight: 700;
+    }
 
     body.dark-mode .clock {
       color: var(--text-dark);
@@ -117,6 +108,7 @@
       border-radius: 20px;
       cursor: pointer;
       font-size: 2rem;
+      pointer-events: auto;
     }
 
     .month-title {
@@ -146,6 +138,7 @@
       padding: 2px 0;
       border-radius: 10px;
       font-size: clamp(1rem, 4vw, 2rem);
+      pointer-events: none; /* Prevent calendar cells from blocking canvas events */
     }
 
     .today {
@@ -156,14 +149,14 @@
     .sunday {
       color: red;
     }
+
     .day-cell:hover {
-  background-color: #ffd54f;
-  cursor: pointer;
-  transition: background 0.2s;
-}
+      background-color: #ffd54f;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
 
-
-    #themeToggle {
+    #themeToggle, #fullscreenToggle {
       position: fixed;
       top: 20px;
       right: 20px;
@@ -173,45 +166,39 @@
       height: 44px;
       font-size: 20px;
       cursor: pointer;
+      background: var(--highlight);
+      color: white;
+      transition: background 0.3s;
+      z-index: 2; /* Buttons above everything */
+      pointer-events: auto;
     }
-    
+
     #fullscreenToggle {
-    position: fixed;
-    top: 70px; /* cách nút theme 50px */
-    right: 20px;
-    border: none;
-    border-radius: 50%;
-    width: 44px;
-    height: 44px;
-    font-size: 20px;
-    cursor: pointer;
-    background: var(--highlight);
-    color: white;
-    user-select: none;
-    transition: background 0.3s;
-  }
-  #fullscreenToggle:hover {
-    background: #005ecb;
-  }
-  body.dark-mode #fullscreenToggle {
-    background: var(--highlight);
-  }
-  body.dark-mode #fullscreenToggle:hover {
-    background: #0047b3;
-  }
-  
+      top: 70px;
+    }
+
+    #themeToggle:hover, #fullscreenToggle:hover {
+      background: #005ecb;
+    }
+
+    body.dark-mode #themeToggle, body.dark-mode #fullscreenToggle {
+      background: var(--highlight);
+    }
+
+    body.dark-mode #themeToggle:hover, body.dark-mode #fullscreenToggle:hover {
+      background: #0047b3;
+    }
   </style>
 </head>
 <body class="dark-mode">
-    <button id="themeToggle">☀️</button>
+  <canvas id="starCanvas"></canvas>
+  <button id="themeToggle">☀️</button>
   <button id="fullscreenToggle" title="Toàn màn hình">⛶</button>
-
   <div class="calendar-container">
     <div class="header">
       <div class="clock" id="clock">--:--:--</div>
       <div class="today-date" id="today-date">--</div>
     </div>
-
     <div class="controls">
       <button onclick="changeMonth(-1)"><strong>👈</strong></button>
       <div class="month-title" id="month-title">Tháng --/----</div>
@@ -220,23 +207,179 @@
     <div class="controls" style="justify-content:center;">
       <button onclick="goToToday()"><strong>🐼🐯🐻</strong></button>
     </div>
-
     <div class="calendar-grid" id="calendar-grid"></div>
   </div>
   <script>
+    // Moon and Stars Animation
+    const canvas = document.getElementById("starCanvas"), ctx = canvas.getContext("2d");
+    let stars = [], isDragging = false, offsetX = 0, offsetY = 0;
+
+    const moon = {
+      x: 0, y: 0, radius: 40, glowRadius: 100, glowStep: 0.5,
+      craters: []
+    };
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      if (!isDragging && moon.x === 0 && moon.y === 0) {
+        moon.x = canvas.width - 100;
+        moon.y = 100;
+        generateCraters();
+      }
+      stars.forEach(star => star.reset());
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    class Star {
+      constructor() { this.reset(); }
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.radius = Math.random() * 1.5;
+        this.alpha = Math.random();
+        this.alphaChange = 0.005 + Math.random() * 0.01;
+      }
+      update() {
+        this.alpha += this.alphaChange;
+        if (this.alpha <= 0 || this.alpha >= 1) this.alphaChange = -this.alphaChange;
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
+        ctx.fillStyle = document.body.classList.contains('dark-mode') 
+          ? `rgba(255,255,255,${this.alpha})` 
+          : `rgba(100,100,100,${this.alpha})`;
+        ctx.fill();
+      }
+    }
+
+    function generateCraters() {
+      moon.craters = [];
+      const craterCount = 6;
+      for (let i = 0; i < craterCount; i++) {
+        let valid = false, cx, cy, r, attempts = 0;
+        while (!valid && attempts < 50) {
+          const angle = Math.random() * Math.PI * 2;
+          const dist = Math.random() * moon.radius * 0.7;
+          cx = Math.cos(angle) * dist;
+          cy = Math.sin(angle) * dist;
+          r = 2 + Math.random() * 4;
+          valid = moon.craters.every(c => {
+            const dx = c.x - cx, dy = c.y - cy;
+            return Math.sqrt(dx * dx + dy * dy) > c.r + r + 2;
+          });
+          attempts++;
+        }
+        if (valid) moon.craters.push({ x: cx, y: cy, r });
+      }
+    }
+
+    function drawMoon() {
+      moon.glowRadius += moon.glowStep;
+      if (moon.glowRadius > moon.radius * 3 || moon.glowRadius < moon.radius * 2)
+        moon.glowStep = -moon.glowStep;
+
+      const g = ctx.createRadialGradient(moon.x, moon.y, moon.radius * 0.5, moon.x, moon.y, moon.glowRadius);
+      g.addColorStop(0, document.body.classList.contains('dark-mode') 
+        ? "rgba(255,255,200,0.4)" 
+        : "rgba(200,200,150,0.3)");
+      g.addColorStop(1, "rgba(255,255,200,0)");
+      ctx.beginPath();
+      ctx.arc(moon.x, moon.y, moon.glowRadius, 0, Math.PI * 2);
+      ctx.fillStyle = g;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(moon.x, moon.y, moon.radius, 0, Math.PI * 2);
+      ctx.fillStyle = document.body.classList.contains('dark-mode') 
+        ? "rgba(255,255,220,0.95)" 
+        : "rgba(200,200,150,0.95)";
+      ctx.fill();
+
+      moon.craters.forEach(c => {
+        ctx.beginPath();
+        ctx.arc(moon.x + c.x, moon.y + c.y, c.r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(180,180,180,0.3)";
+        ctx.fill();
+      });
+    }
+
+    function handleStart(clientX, clientY) {
+      const dx = clientX - moon.x, dy = clientY - moon.y;
+      if (Math.sqrt(dx * dx + dy * dy) < moon.radius) {
+        isDragging = true;
+        offsetX = dx;
+        offsetY = dy;
+      }
+    }
+
+    function handleMove(clientX, clientY) {
+      if (isDragging) {
+        moon.x = Math.max(moon.radius, Math.min(canvas.width - moon.radius, clientX - offsetX));
+        moon.y = Math.max(moon.radius, Math.min(canvas.height - moon.radius, clientY - offsetY));
+      }
+    }
+
+    canvas.addEventListener("mousedown", e => {
+      e.preventDefault();
+      handleStart(e.clientX, e.clientY);
+    });
+
+    canvas.addEventListener("mousemove", e => {
+      e.preventDefault();
+      handleMove(e.clientX, e.clientY);
+    });
+
+    canvas.addEventListener("mouseup", () => isDragging = false);
+    canvas.addEventListener("mouseleave", () => isDragging = false);
+
+    canvas.addEventListener("touchstart", e => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      handleStart(touch.clientX, touch.clientY);
+    });
+
+    canvas.addEventListener("touchmove", e => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      handleMove(touch.clientX, touch.clientY);
+    });
+
+    canvas.addEventListener("touchend", () => isDragging = false);
+
+    function createStars() {
+      stars = [];
+      const starCount = Math.floor((canvas.width * canvas.height) / 5000);
+      for (let i = 0; i < starCount; i++) stars.push(new Star());
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawMoon();
+      stars.forEach(s => { s.update(); s.draw(); });
+      requestAnimationFrame(animate);
+    }
+
+    createStars();
+    generateCraters();
+    animate();
+
+    // Calendar Logic
     const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     let monthOffset = 0;
-    
+
     const fullscreenBtn = document.getElementById('fullscreenToggle');
-fullscreenBtn.addEventListener('click', () => {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen().catch(err => {
-      alert(`Lỗi khi bật fullscreen: ${err.message}`);
+    fullscreenBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+          alert(`Lỗi khi bật fullscreen: ${err.message}`);
+        });
+      } else {
+        document.exitFullscreen();
+      }
     });
-  } else {
-    document.exitFullscreen();
-  }
-});
 
     function updateClock() {
       const now = new Date();
@@ -253,57 +396,52 @@ fullscreenBtn.addEventListener('click', () => {
       document.getElementById('today-date').textContent = formatted.charAt(0).toUpperCase() + formatted.slice(1);
     }
 
-function renderCalendar(offset = 0) {
-  const now = new Date();
-  now.setMonth(now.getMonth() + offset);
-  const year = now.getFullYear();
-  const monthNum = now.getMonth(); // 0–11
-  const month = String(monthNum + 1).padStart(2, '0');
+    function renderCalendar(offset = 0) {
+      const now = new Date();
+      now.setMonth(now.getMonth() + offset);
+      const year = now.getFullYear();
+      const monthNum = now.getMonth();
+      const month = String(monthNum + 1).padStart(2, '0');
 
-  const firstDay = new Date(year, monthNum, 1).getDay(); // 0 (Sun) – 6 (Sat)
-  const daysInMonth = new Date(year, monthNum + 1, 0).getDate();
+      const firstDay = new Date(year, monthNum, 1).getDay();
+      const daysInMonth = new Date(year, monthNum + 1, 0).getDate();
 
-  const grid = document.getElementById("calendar-grid");
-  const title = document.getElementById("month-title");
-  grid.innerHTML = '';
-  title.textContent = `${month}/${year}`;
+      const grid = document.getElementById("calendar-grid");
+      const title = document.getElementById("month-title");
+      grid.innerHTML = '';
+      title.textContent = `${month}/${year}`;
 
-  // Tiêu đề thứ trong tuần
-  weekdays.forEach(day => {
-    const div = document.createElement('div');
-    div.className = 'day-header';
-    div.textContent = day;
-    grid.appendChild(div);
-  });
+      weekdays.forEach(day => {
+        const div = document.createElement('div');
+        div.className = 'day-header';
+        div.textContent = day;
+        grid.appendChild(div);
+      });
 
-  // Offset: Chủ nhật là cột cuối cùng
-  const startOffset = (firstDay === 0 ? 6 : firstDay - 1);
-  for (let i = 0; i < startOffset; i++) {
-    grid.appendChild(document.createElement('div'));
-  }
+      const startOffset = (firstDay === 0 ? 6 : firstDay - 1);
+      for (let i = 0; i < startOffset; i++) {
+        grid.appendChild(document.createElement('div'));
+      }
 
-  const today = new Date();
+      const today = new Date();
+      for (let d = 1; d <= daysInMonth; d++) {
+        const date = new Date(year, monthNum, d);
+        const div = document.createElement('div');
+        div.className = 'day-cell';
+        div.textContent = String(d).padStart(2, '0');
 
-  for (let d = 1; d <= daysInMonth; d++) {
-    const date = new Date(year, monthNum, d);
-    const div = document.createElement('div');
-    div.className = 'day-cell';
-    div.textContent = String(d).padStart(2, '0');
+        if (date.getDay() === 0) div.classList.add('sunday');
+        if (
+          today.getDate() === d &&
+          today.getMonth() === monthNum &&
+          today.getFullYear() === year
+        ) {
+          div.classList.add('today');
+        }
 
-    if (date.getDay() === 0) div.classList.add('sunday'); // Chủ nhật
-
-    if (
-      today.getDate() === d &&
-      today.getMonth() === monthNum &&
-      today.getFullYear() === year
-    ) {
-      div.classList.add('today');
+        grid.appendChild(div);
+      }
     }
-
-    grid.appendChild(div);
-  }
-}
-
 
     function changeMonth(diff) {
       monthOffset += diff;
@@ -318,7 +456,7 @@ function renderCalendar(offset = 0) {
     document.getElementById('themeToggle').addEventListener('click', () => {
       const body = document.body;
       body.classList.toggle('dark-mode');
-      const icon = body.classList.contains('dark-mode') ? '☀️':'🌙' ;
+      const icon = body.classList.contains('dark-mode') ? '☀️' : '🌙';
       document.getElementById('themeToggle').textContent = icon;
     });
 
