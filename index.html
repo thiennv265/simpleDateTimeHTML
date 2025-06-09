@@ -3,6 +3,12 @@
 <head>
   <!-- Thêm vào trong <head> -->
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@700&display=swap" rel="stylesheet" />
+<!-- IBM Plex Mono -->
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/gh/vanng822/lunar-calendar/lunar.min.js"></script>
+
+<!-- Space Mono -->
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@700&display=swap" rel="stylesheet">
 
   <link href="https://fonts.googleapis.com/css2?family=Oswald&display=swap" rel="stylesheet" />
   <meta charset="UTF-8" />
@@ -38,6 +44,21 @@
       background: var(--bg-dark);
       color: var(--text-dark);
     }
+    
+    .tooltip {
+  position: absolute;
+  background: #333;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  z-index: 999;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
 
     .calendar-container {
       background: var(--card-light);
@@ -60,8 +81,8 @@
 
 /* Thay đổi .clock như sau */
 .clock {
-  font-family: 'Roboto Mono', monospace;
-  font-size: clamp(1.2rem, 8vw, 5rem);
+  font-family: 'Space Mono', monospace;
+  font-size: clamp(2.5rem, 8vw, 5rem);
   color: var(--text-light);
   margin-bottom: 8px;
   transition: color 0.3s;
@@ -74,7 +95,7 @@
     }
 
     .today-date {
-      font-size: 1.1rem;
+      font-size: 1.5rem;
       color: var(--text-muted-light);
     }
 
@@ -92,15 +113,15 @@
       background: var(--highlight);
       color: white;
       border: none;
-      padding: 8px 12px;
-      border-radius: 10px;
+      padding: 2px 3px;
+      border-radius: 20px;
       cursor: pointer;
-      font-size: 1rem;
+      font-size: 2rem;
     }
 
     .month-title {
       font-weight: bold;
-      font-size: 1.2rem;
+      font-size: 1.5rem;
     }
 
     .calendar-grid {
@@ -122,9 +143,9 @@
 
     .day-cell {
       text-align: center;
-      padding: 5px 0;
+      padding: 2px 0;
       border-radius: 10px;
-      font-size: 1.5rem;
+      font-size: clamp(1rem, 4vw, 2rem);
     }
 
     .today {
@@ -135,6 +156,12 @@
     .sunday {
       color: red;
     }
+    .day-cell:hover {
+  background-color: #ffd54f;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
 
     #themeToggle {
       position: fixed;
@@ -186,17 +213,16 @@
     </div>
 
     <div class="controls">
-      <button onclick="changeMonth(-1)">←</button>
+      <button onclick="changeMonth(-1)"><strong>👈</strong></button>
       <div class="month-title" id="month-title">Tháng --/----</div>
-      <button onclick="changeMonth(1)">→</button>
+      <button onclick="changeMonth(1)"><strong>👉</strong></button>
     </div>
     <div class="controls" style="justify-content:center;">
-      <button onclick="goToToday()"><strong>Today</strong></button>
+      <button onclick="goToToday()"><strong>🐼🐯🐻</strong></button>
     </div>
 
     <div class="calendar-grid" id="calendar-grid"></div>
   </div>
-
   <script>
     const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     let monthOffset = 0;
@@ -227,43 +253,57 @@ fullscreenBtn.addEventListener('click', () => {
       document.getElementById('today-date').textContent = formatted.charAt(0).toUpperCase() + formatted.slice(1);
     }
 
-    function renderCalendar(offset = 0) {
-      const now = new Date();
-      now.setMonth(now.getMonth() + offset);
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const firstDay = new Date(year, month, 1).getDay();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      const grid = document.getElementById("calendar-grid");
-      const title = document.getElementById("month-title");
-      grid.innerHTML = '';
-      title.textContent = `${month}/${year}`;
+function renderCalendar(offset = 0) {
+  const now = new Date();
+  now.setMonth(now.getMonth() + offset);
+  const year = now.getFullYear();
+  const monthNum = now.getMonth(); // 0–11
+  const month = String(monthNum + 1).padStart(2, '0');
 
-      weekdays.forEach(day => {
-        const div = document.createElement('div');
-        div.className = 'day-header';
-        div.textContent = day;
-        grid.appendChild(div);
-      });
+  const firstDay = new Date(year, monthNum, 1).getDay(); // 0 (Sun) – 6 (Sat)
+  const daysInMonth = new Date(year, monthNum + 1, 0).getDate();
 
-      const startOffset = (firstDay === 0 ? 6 : firstDay - 1);
-      for (let i = 0; i < startOffset; i++) {
-        grid.appendChild(document.createElement('div'));
-      }
+  const grid = document.getElementById("calendar-grid");
+  const title = document.getElementById("month-title");
+  grid.innerHTML = '';
+  title.textContent = `${month}/${year}`;
 
-      const today = new Date();
-      const isCurrentMonth = today.getMonth() === month && today.getFullYear() === year;
+  // Tiêu đề thứ trong tuần
+  weekdays.forEach(day => {
+    const div = document.createElement('div');
+    div.className = 'day-header';
+    div.textContent = day;
+    grid.appendChild(div);
+  });
 
-      for (let d = 1; d <= daysInMonth; d++) {
-        const date = new Date(year, month, d);
-        const div = document.createElement('div');
-        div.className = 'day-cell';
-        div.textContent = String(d).padStart(2, '0');
-        if (date.getDay() === 0) div.classList.add('sunday');
-        if (isCurrentMonth && d === today.getDate()) div.classList.add('today');
-        grid.appendChild(div);
-      }
+  // Offset: Chủ nhật là cột cuối cùng
+  const startOffset = (firstDay === 0 ? 6 : firstDay - 1);
+  for (let i = 0; i < startOffset; i++) {
+    grid.appendChild(document.createElement('div'));
+  }
+
+  const today = new Date();
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(year, monthNum, d);
+    const div = document.createElement('div');
+    div.className = 'day-cell';
+    div.textContent = String(d).padStart(2, '0');
+
+    if (date.getDay() === 0) div.classList.add('sunday'); // Chủ nhật
+
+    if (
+      today.getDate() === d &&
+      today.getMonth() === monthNum &&
+      today.getFullYear() === year
+    ) {
+      div.classList.add('today');
     }
+
+    grid.appendChild(div);
+  }
+}
+
 
     function changeMonth(diff) {
       monthOffset += diff;
